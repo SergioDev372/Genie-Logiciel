@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database.database import Base, engine
 import models  # ensure all models are imported so tables are created
+from routes import auth
 
 Base.metadata.create_all(bind=engine)
 
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Inclure les routes d'authentification
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 @app.get("/")
 def home():

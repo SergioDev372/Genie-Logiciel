@@ -1,0 +1,38 @@
+Generic single-database configuration.
+
+Please review the configuration and documentation at:
+http://alembic.zzzcomputing.com/en/latest/tutorial.html
+
+The majority of which is applicable to this template.
+
+To run migrations, you can use the alembic command, which is installed
+along with alembic:
+
+    alembic -c alembic.ini upgrade head
+
+To see all available commands, run:
+
+    alembic -c alembic.ini --help
+
+To see the current revision and available revisions:
+
+    alembic -c alembic.ini current
+    alembic -c alembic.ini history
+
+To create a new revision:
+
+    alembic -c alembic.ini revision -m "description of migration"
+
+To create a new revision with autodetection of model changes:
+
+    alembic -c alembic.ini revision --autogenerate -m "description of migration"
+
+To upgrade to a specific revision:
+
+    alembic -c alembic.ini upgrade <revision_id>
+
+To downgrade to a specific revision:
+
+    alembic -c alembic.ini downgrade <revision_id>
+
+For more information, see the Alembic documentation.
