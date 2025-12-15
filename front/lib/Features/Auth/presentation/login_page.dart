@@ -12,8 +12,18 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+
+  void _onLoginPressed() {
+    if (!_formKey.currentState!.validate()) return;
+
+    // logique plus tard
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,44 +32,77 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const AuthLogo(),
-              const SizedBox(height: 32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const AuthLogo(),
+                const SizedBox(height: 32),
 
-              AuthTextField(
-                hint: 'Adresse e-mail',
-                icon: Icons.email,
-                controller: emailController,
-              ),
-              const SizedBox(height: 16),
+                /// EMAIL
+                AuthTextField(
+                  hint: 'Adresse e-mail',
+                  icon: Icons.email,
+                  controller: emailController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Veuillez entrer votre e-mail';
+                    }
+                    final emailRegex =
+                    RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                    if (!emailRegex.hasMatch(value)) {
+                      return 'E-mail invalide';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
 
-              AuthTextField(
-                hint: 'Mot de passe',
-                icon: Icons.lock,
-                controller: passwordController,
-                obscureText: true,
-              ),
-              const SizedBox(height: 24),
+                /// PASSWORD
+                AuthTextField(
+                  hint: 'Mot de passe',
+                  icon: Icons.lock,
+                  controller: passwordController,
+                  obscureText: _obscurePassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Veuillez entrer votre mot de passe';
+                    }
+                    if (value.length < 6) {
+                      return 'Minimum 6 caractères';
+                    }
+                    return null;
+                  },
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                ),
 
-              AuthButton(
-                label: 'Se connecter',
-                onPressed: () {
-                  // logique plus tard
-                },
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-              ForgotPasswordButton(
-                onPressed: () {
-                  // navigation plus tard
-                },
-              ),
-            ],
+                AuthButton(
+                  label: 'Se connecter',
+                  onPressed: _onLoginPressed,
+                ),
+
+                const SizedBox(height: 16),
+                ForgotPasswordButton(onPressed: () {}),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
