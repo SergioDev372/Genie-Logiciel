@@ -1,10 +1,10 @@
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
+import secrets
 
 from sqlalchemy import (
     Column,
-    Integer,
     String,
     Boolean,
     DateTime,
@@ -47,8 +47,8 @@ class StatutAssignationEnum(str, Enum):
 class Utilisateur(Base):
     __tablename__ = "utilisateur"
 
-    id_utilisateur = Column(Integer, primary_key=True, autoincrement=True)
-    email = Column(String(191), unique=True, nullable=False)
+    identifiant = Column(String(100), primary_key=True, nullable=False)  # Clé primaire interne (alphanumérique)
+    email = Column(String(191), unique=True, nullable=False, index=True)  # ← Utilisé pour la connexion
     mot_de_passe = Column(String(255), nullable=False)
     nom = Column(String(100), nullable=False)
     prenom = Column(String(100), nullable=False)
@@ -57,15 +57,18 @@ class Utilisateur(Base):
     date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
     token_activation = Column(String(255), nullable=True)
     date_expiration_token = Column(DateTime, nullable=True)
+    mot_de_passe_temporaire = Column(Boolean, nullable=False, default=False)  # ← AJOUTÉ pour gérer le DE
 
+    # Relations : un utilisateur a 0 ou 1 rôle spécifique
     etudiant = relationship("Etudiant", back_populates="utilisateur", uselist=False)
     formateur = relationship("Formateur", back_populates="utilisateur", uselist=False)
+    # ⚠️ Le DE n'a PAS de relation vers Formateur ou Etudiant
 
 
 class Formation(Base):
     __tablename__ = "formation"
 
-    id_formation = Column(Integer, primary_key=True, autoincrement=True)
+    id_formation = Column(String(100), primary_key=True, nullable=False)
     nom_formation = Column(String(191), unique=True, nullable=False)
     description = Column(Text, nullable=True)
     date_debut = Column(Date, nullable=False)
@@ -77,8 +80,8 @@ class Formation(Base):
 class Promotion(Base):
     __tablename__ = "promotion"
 
-    id_promotion = Column(Integer, primary_key=True, autoincrement=True)
-    id_formation = Column(Integer, ForeignKey("formation.id_formation"), nullable=False)
+    id_promotion = Column(String(100), primary_key=True, nullable=False)
+    id_formation = Column(String(100), ForeignKey("formation.id_formation"), nullable=False)
     annee_academique = Column(String(20), nullable=False)
     libelle = Column(String(255), nullable=False)
     date_debut = Column(Date, nullable=False)
@@ -96,10 +99,10 @@ class Promotion(Base):
 class Etudiant(Base):
     __tablename__ = "etudiant"
 
-    id_etudiant = Column(Integer, primary_key=True, autoincrement=True)
-    id_utilisateur = Column(Integer, ForeignKey("utilisateur.id_utilisateur"), unique=True, nullable=False)
+    id_etudiant = Column(String(100), primary_key=True, nullable=False)
+    identifiant = Column(String(100), ForeignKey("utilisateur.identifiant"), unique=True, nullable=False)
     matricule = Column(String(100), unique=True, nullable=False)
-    id_promotion = Column(Integer, ForeignKey("promotion.id_promotion"), nullable=False)
+    id_promotion = Column(String(100), ForeignKey("promotion.id_promotion"), nullable=False)
     date_inscription = Column(Date, nullable=False)
     statut = Column(SAEnum(StatutEtudiantEnum), nullable=False, default=StatutEtudiantEnum.ACTIF)
 
@@ -111,8 +114,8 @@ class Etudiant(Base):
 class Formateur(Base):
     __tablename__ = "formateur"
 
-    id_formateur = Column(Integer, primary_key=True, autoincrement=True)
-    id_utilisateur = Column(Integer, ForeignKey("utilisateur.id_utilisateur"), unique=True, nullable=False)
+    id_formateur = Column(String(100), primary_key=True, nullable=False)
+    identifiant = Column(String(100), ForeignKey("utilisateur.identifiant"), unique=True, nullable=False)
     numero_employe = Column(String(100), nullable=True)
     specialite = Column(String(255), nullable=True)
 
@@ -123,12 +126,12 @@ class Formateur(Base):
 class EspacePedagogique(Base):
     __tablename__ = "espace_pedagogique"
 
-    id_espace = Column(Integer, primary_key=True, autoincrement=True)
-    id_promotion = Column(Integer, ForeignKey("promotion.id_promotion"), nullable=False)
+    id_espace = Column(String(100), primary_key=True, nullable=False)
+    id_promotion = Column(String(100), ForeignKey("promotion.id_promotion"), nullable=False)
     nom_matiere = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
-    id_formateur = Column(Integer, ForeignKey("formateur.id_formateur"), nullable=False)
+    id_formateur = Column(String(100), ForeignKey("formateur.id_formateur"), nullable=False)
     code_acces = Column(String(100), nullable=True)
 
     promotion = relationship("Promotion", back_populates="espaces_pedagogiques")
@@ -139,8 +142,8 @@ class EspacePedagogique(Base):
 class Travail(Base):
     __tablename__ = "travail"
 
-    id_travail = Column(Integer, primary_key=True, autoincrement=True)
-    id_espace = Column(Integer, ForeignKey("espace_pedagogique.id_espace"), nullable=False)
+    id_travail = Column(String(100), primary_key=True, nullable=False)
+    id_espace = Column(String(100), ForeignKey("espace_pedagogique.id_espace"), nullable=False)
     titre = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     type_travail = Column(SAEnum(TypeTravailEnum), nullable=False)
@@ -157,8 +160,8 @@ class Travail(Base):
 class GroupeEtudiant(Base):
     __tablename__ = "groupe_etudiant"
 
-    id_groupe = Column(Integer, primary_key=True, autoincrement=True)
-    id_travail = Column(Integer, ForeignKey("travail.id_travail"), nullable=False)
+    id_groupe = Column(String(100), primary_key=True, nullable=False)
+    id_travail = Column(String(100), ForeignKey("travail.id_travail"), nullable=False)
     nom_groupe = Column(String(255), nullable=False)
     date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
 
@@ -169,10 +172,10 @@ class GroupeEtudiant(Base):
 class Assignation(Base):
     __tablename__ = "assignation"
 
-    id_assignation = Column(Integer, primary_key=True, autoincrement=True)
-    id_etudiant = Column(Integer, ForeignKey("etudiant.id_etudiant"), nullable=False)
-    id_travail = Column(Integer, ForeignKey("travail.id_travail"), nullable=False)
-    id_groupe = Column(Integer, ForeignKey("groupe_etudiant.id_groupe"), nullable=True)
+    id_assignation = Column(String(100), primary_key=True, nullable=False)
+    id_etudiant = Column(String(100), ForeignKey("etudiant.id_etudiant"), nullable=False)
+    id_travail = Column(String(100), ForeignKey("travail.id_travail"), nullable=False)
+    id_groupe = Column(String(100), ForeignKey("groupe_etudiant.id_groupe"), nullable=True)
     date_assignment = Column(DateTime, nullable=False, default=datetime.utcnow)
     statut = Column(SAEnum(StatutAssignationEnum), nullable=False, default=StatutAssignationEnum.ASSIGNE)
 
@@ -185,8 +188,8 @@ class Assignation(Base):
 class Livraison(Base):
     __tablename__ = "livraison"
 
-    id_livraison = Column(Integer, primary_key=True, autoincrement=True)
-    id_assignation = Column(Integer, ForeignKey("assignation.id_assignation"), nullable=False)
+    id_livraison = Column(String(100), primary_key=True, nullable=False)
+    id_assignation = Column(String(100), ForeignKey("assignation.id_assignation"), nullable=False)
     chemin_fichier = Column(String(255), nullable=False)
     date_livraison = Column(DateTime, nullable=False, default=datetime.utcnow)
     commentaire = Column(Text, nullable=True)
@@ -194,3 +197,12 @@ class Livraison(Base):
     feedback = Column(Text, nullable=True)
 
     assignation = relationship("Assignation", back_populates="livraisons")
+
+
+class TentativeConnexion(Base):
+    __tablename__ = "tentative_connexion"
+
+    id_tentative = Column(String(100), primary_key=True, nullable=False, default=lambda: secrets.token_urlsafe(16))
+    email = Column(String(191), nullable=False)
+    date_tentative = Column(DateTime, nullable=False, default=datetime.utcnow)
+    succes = Column(Boolean, nullable=False, default=False)
