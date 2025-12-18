@@ -6,6 +6,9 @@ from sqlalchemy import and_
 from models import Utilisateur, TentativeConnexion, RoleEnum
 from database.database import get_db
 from core.jwt import create_access_token, get_password_hash, verify_password
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 import secrets
 
 
@@ -129,3 +132,52 @@ def generer_token_jwt(utilisateur: Dict[str, Any]) -> str:
         "prenom": utilisateur["prenom"]
     }
     return create_access_token(data=payload)
+
+
+# Configuration pour l'authentification Bearer
+security = HTTPBearer()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> Utilisateur:
+    """Récupère l'utilisateur actuel à partir du token JWT"""
+    
+    # Vérifier et décoder le token
+    try:
+        from core.jwt import verify_token
+        payload = verify_token(credentials.credentials)
+        identifiant = payload.get("sub")
+        
+        if identifiant is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token invalide",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token invalide",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Récupérer l'utilisateur depuis la base de données
+    utilisateur = db.query(Utilisateur).filter(Utilisateur.identifiant == identifiant).first()
+    
+    if utilisateur is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur non trouvé",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not utilisateur.actif:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Compte inactif",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return utilisateur
