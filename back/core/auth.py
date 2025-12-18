@@ -14,9 +14,16 @@ def generer_token_unique(longueur: int = 32) -> str:
     return secrets.token_urlsafe(longueur)
 
 
+def generer_mot_de_passe_temporaire(longueur: int = 10) -> str:
+    """Génère un mot de passe temporaire"""
+    return secrets.token_urlsafe(longueur)[:longueur]
+
+
 def initialiser_compte_de(db: Session) -> Optional[Dict[str, Any]]:
     """
     Initialise le compte DE s'il n'existe pas déjà
+    Si le compte existe mais avec un mauvais hash, le réinitialise correctement
+    Ne modifie JAMAIS le mot de passe si le compte existe déjà avec un hash correct
     Retourne le compte DE existant ou le nouveau compte créé
     """
     # Vérifier si un compte DE existe déjà
@@ -24,6 +31,16 @@ def initialiser_compte_de(db: Session) -> Optional[Dict[str, Any]]:
     
     if de_existant:
         print(f"Debug: Compte DE existant trouvé: {de_existant.email}")
+        print(f"Debug: Mot de passe temporaire: {de_existant.mot_de_passe_temporaire}")
+        
+        # Vérifier si le hash correspond à admin123 avec SHA-256
+        hash_attendu = get_password_hash("admin123")
+        if de_existant.mot_de_passe != hash_attendu and de_existant.mot_de_passe_temporaire:
+            print("Debug: Hash incorrect - Réinitialisation avec le bon hash SHA-256")
+            de_existant.mot_de_passe = hash_attendu
+            db.commit()
+            print(f"Debug: Hash corrigé: {hash_attendu}")
+        
         return {
             "identifiant": de_existant.identifiant,
             "email": de_existant.email,
