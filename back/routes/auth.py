@@ -125,8 +125,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     db.add(tentative)
     db.commit()
     
-    # Étape 6: Vérifier si le DE doit changer son mot de passe temporaire
-    if utilisateur.role == RoleEnum.DE and utilisateur.mot_de_passe_temporaire:
+    # Étape 6: Vérifier si l'utilisateur doit changer son mot de passe temporaire
+    if utilisateur.mot_de_passe_temporaire:
         token = generer_token_unique(32)
         date_expiration = datetime.utcnow() + timedelta(hours=24)
         
