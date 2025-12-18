@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../widgets/auth_button.dart';
-import '../widgets/auth_logo.dart';
-import '../widgets/auth_text_field.dart';
-import '../widgets/forgot_password_button.dart';
+
+import '../../../view/Auth/widgets/auth_button.dart';
+import '../../../view/Auth/widgets/auth_logo.dart';
+import '../../../view/Auth/widgets/auth_text_field.dart';
+import '../../../view/Auth/widgets/forgot_password_button.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
