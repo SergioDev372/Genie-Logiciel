@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:genielogiciel/view/Auth/presentation/login_page.dart' hide LoginPage;
+import 'package:genielogiciel/view/Auth/presentation/login_page.dart'
+    hide LoginPage;
 
 import 'Features/Auth/presentation/login_page.dart';
 
@@ -14,7 +15,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Application de gestion des étudiant',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -37,4 +39,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
